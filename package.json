@@ -1,0 +1,28 @@
+{
+  "name": "eventflow",
+  "version": "0.0.1",
+  "description": "Flow control for your event emitters",
+  "main": "eventflow.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/cpsubrian/node-eventflow.git"
+  },
+  "keywords": [
+    "flow",
+    "control",
+    "events",
+    "event",
+    "emitter"
+  ],
+  "dependencies": {
+    "async": "0.1.22"
+  },
+  "devDependencies": {
+    "mocha": "*"
+  },
+  "author": "Brian Link",
+  "license": "MIT"
+}
