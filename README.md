@@ -38,7 +38,7 @@ or not.
 
 ```js
 emitter.on('foo', function() {
-  // Do something sychronous
+  // Do something synchronous
 });
 
 emitter.on('foo', function(callback) {
@@ -51,19 +51,67 @@ emitter.on('foo', function(callback) {
 Now use one of the flow control methods to invoke your handlers and respond
 when they are done.
 
+**serires**
 ```js
 emitter.series('foo', function() {
   // The listeners ran in the order they were added and are all finished.
 });
 ```
 
-or
-
+**parallel**
 ```js
 emitter.parallel('foo', function() {
   // The listeners ran in parallel and are all finished.
 });
 ```
+
+Advanced
+--------
+
+**Event listeners with arguments**
+
+EventFlow supports calling your listeners with any number of arguments, as well
+as the optional continuation callback.
+
+```js
+// In your logger or something:
+emitter.on('purchase', function(name, item, cost) {
+  console.log(name + ' just bought ' + item + ' for ' + cost);
+})
+
+// Somwhere else in your code:
+emitter.on('purchase', function(name, item, cost, callback) {
+  saveToDB({name: name, item: item, cost: cost}, callback);
+});
+
+// Perhaps in a form POST handler:
+emitter.series('purchase', 'Brian', 'T-Shirt', '$15.00', function() {
+  // The purchase was logged and saved to the db.
+});
+```
+
+**Using async-style `callback(err, results)`**
+
+EventFlow uses async directly to handle the flow-control, so you can use `err`
+and `results` just like you already do.
+
+```js
+// Synchronous listeners can return a result.
+emitter.on('fruit', function() {
+  return 'apple';
+});
+
+// Async listeners use the standard (err, result) callback.
+emitter.on('fruit', function(callback) {
+  callback(null, 'orange');
+});
+
+emitter.series('fruit', function(err, results) {
+  console.log(results);
+  // [ 'apple', 'orange' ]
+});
+```
+
 
 Developed by [Terra Eclipse](http://www.terraeclipse.com)
 --------------------------------------------------------
