@@ -10,8 +10,8 @@ EventEmitters are an important part of well-designed node.js applications.
 `on()` and `emit()` can get you pretty far, but wouldn't it be great if you
 could run your event handlers asynchronously, with a continuation callback.
 
-**EventFlow** exposes the flow-controlly-goodness of
-[async](https://github.com/caolan/async) for your event emitters.
+**EventFlow** adds the flow-controlly-goodness of
+[async](https://github.com/caolan/async) to your event emitters.
 
 Usage
 -----
@@ -51,7 +51,7 @@ emitter.on('foo', function(callback) {
 Now use one of the flow control methods to invoke your handlers and respond
 when they are done.
 
-**serires**
+**series**
 ```js
 emitter.series('foo', function() {
   // The listeners ran in the order they were added and are all finished.
