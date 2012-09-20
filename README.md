@@ -3,6 +3,7 @@ EventFlow
 
 Flow control for your event emitters.
 
+[![build status](https://secure.travis-ci.org/cpsubrian/node-eventflow.png)](http://travis-ci.org/cpsubrian/node-eventflow)
 
 About
 -----
