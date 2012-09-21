@@ -9,7 +9,7 @@ About
 -----
 EventEmitters are an important part of well-designed node.js applications.
 `on()` and `emit()` can get you pretty far, but wouldn't it be great if you
-could run your event handlers asynchronously, with a continuation callback.
+could run your event handlers asynchronously, with a continuation callback?
 
 **EventFlow** adds the flow-controlly-goodness of
 [async](https://github.com/caolan/async) to your event emitters.
@@ -123,6 +123,9 @@ Invoke executes using the following rules:
 2. The listener can `return` a value and if so, callback is called with `callback(err, value)`.
 3. The listener can accept a continuation callback and if so, that function should
    be called with `(err, [value])`.
+
+Think of 'invoke' as in-app RPC via an EventEmitter. Instead of passing
+functions around your app in `options` objects, you can invoke them instead.
 
 **Example**
 ```js
