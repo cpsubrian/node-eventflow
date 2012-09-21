@@ -113,6 +113,37 @@ emitter.series('fruit', function(err, results) {
 });
 ```
 
+Invoke
+------
+EventFlow also exposes the method `emitter.invoke(event, [args...], callback)`.
+Invoke executes using the following rules:
+
+1. There must be EXACTLY one listener for the event. Otherwise the callback
+   is called with an error.
+2. The listener can `return` a value and if so, callback is called with `callback(err, value)`.
+3. The listener can accept a continuation callback and if so, that function should
+   be called with `(err, [value])`.
+
+**Example**
+```js
+emitter.on('add', function(a, b) {
+  return a + b;
+});
+emitter.invoke('add', 1, 2, function(err, value) {
+  console.log(value);
+  // 3
+});
+
+
+emitter.on('subtract', function(a, b, callback) {
+  callback(null, a - b);
+});
+emitter.invoke('subtract', 3, 2, function(err, value) {
+  console.log(value);
+  // 1
+});
+```
+
 
 Developed by [Terra Eclipse](http://www.terraeclipse.com)
 --------------------------------------------------------

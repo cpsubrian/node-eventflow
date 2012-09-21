@@ -18,6 +18,26 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
       async[method](tasks, callback);
     };
   });
+
+  // 'Invoke' an event, only calling the handler if there is EXACTLY one
+  // listener.
+  eventEmitter.invoke = function () {
+    var emitter = this,
+        args = Array.prototype.slice.call(arguments),
+        name = args.shift(),
+        callback = args.pop(),
+        listeners = emitter.listeners(name);
+
+    if (!listeners.length) {
+      callback(new Error('Tried to invoke `' + name + '` but there were no listeners'));
+    }
+    else if (listeners.length > 1) {
+      callback(new Error('Tried to invoke `' + name + '` but there were ' + listeners.length + ' listners'));
+    }
+    else {
+      asyncApply(emitter, listeners.pop(), args, callback);
+    }
+  };
 };
 
 function countArgs (fn) {
@@ -32,21 +52,18 @@ function countArgs (fn) {
 }
 eventflow.countArgs = countArgs;
 
+function asyncApply (thisArg, fn, args, done) {
+  var count = countArgs(fn);
+  if (count <= args.length) {
+    done(null, fn.apply(thisArg, args));
+  }
+  else {
+    fn.apply(thisArg, args.slice(0).concat([done]));
+  }
+}
+
 function mapHandlers (emitter, name, args) {
   return emitter.listeners(name).map(function (listener) {
-    return function (done) {
-      var count = countArgs(listener),
-          handlerArgs = args.slice(0),
-          result = null;
-
-      if (count <= args.length) {
-        result = listener.apply(emitter, handlerArgs);
-        done(null, result);
-      }
-      else {
-        handlerArgs.push(done);
-        listener.apply(emitter, handlerArgs);
-      }
-    };
+    return asyncApply.bind(emitter, emitter, listener, args);
   });
 }

@@ -106,7 +106,6 @@ describe('series', function() {
       done();
     });
   });
-
 });
 
 
@@ -132,5 +131,79 @@ describe('parallel', function () {
       done();
     });
   });
-
 });
+
+describe('invoke', function () {
+  var emitter;
+
+  beforeEach(function () {
+    emitter = new EventEmitter();
+  });
+
+  it('should cause an error if there are no listeners', function (done) {
+    emitter.invoke('timestamp', function (err, timestamp) {
+      assert(err);
+      done();
+    });
+  });
+
+  it('should cause an error if there are more than one listeners', function (done) {
+    emitter.on('timestamp', function () {
+      return new Date().getTime();
+    });
+    emitter.on('timestamp', function () {
+      return new Date().getTime();
+    });
+    emitter.invoke('timestamp', function (err, timestamp) {
+      assert(err);
+      done();
+    });
+  });
+
+  it('should work when there is exactly one synchronous listner', function (done) {
+    var timestamp = new Date().getTime();
+    emitter.on('timestamp', function () {
+      return timestamp;
+    });
+    emitter.invoke('timestamp', function (err, value) {
+      assert.ifError(err);
+      assert(value, timestamp);
+      done();
+    });
+  });
+
+  it('should work when there is exactly one asynchronous listener', function (done) {
+    var timestamp = new Date().getTime();
+    emitter.on('timestamp', function (callback) {
+      callback(null, timestamp);
+    });
+    emitter.invoke('timestamp', function (err, value) {
+      assert.ifError(err);
+      assert(value, timestamp);
+      done();
+    });
+  });
+
+  it('should work with arguments', function (done) {
+    emitter.on('add', function (a, b) {
+      return a + b;
+    });
+    emitter.invoke('add', 1, 2, function (err, value) {
+      assert.ifError(err);
+      assert(value, 3);
+      done();
+    });
+  });
+
+  it('should work with arguments, asynchronously', function (done) {
+    emitter.on('subtract', function (a, b, callback) {
+      callback(null, a - b);
+    });
+    emitter.invoke('subtract', 3, 2, function (err, value) {
+      assert.ifError(err);
+      assert(value, 1);
+      done();
+    });
+  });
+});
+
