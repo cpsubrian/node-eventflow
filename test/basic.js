@@ -131,6 +131,24 @@ describe('parallel', function () {
       done();
     });
   });
+
+  it ('should be able to be run multiple times', function (done) {
+    emitter.on('numbers', function () {
+      return 1;
+    });
+    emitter.on('numbers', function() {
+      return 2;
+    });
+    emitter.parallel('numbers', function (err, results) {
+      assert.ifError(err);
+      assert(results[1], 2);
+      emitter.parallel('numbers', function (err, results) {
+        assert.ifError(err);
+        assert(results[0], 1);
+        done();
+      });
+    });
+  });
 });
 
 describe('invoke', function () {
