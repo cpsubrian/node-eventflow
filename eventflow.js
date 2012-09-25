@@ -35,7 +35,7 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
       callback(new Error('Tried to invoke `' + name + '` but there were ' + listeners.length + ' listners'));
     }
     else {
-      asyncApply(emitter, listeners.pop(), args, callback);
+      asyncApply(emitter, listeners[0], args, callback);
     }
   };
 };

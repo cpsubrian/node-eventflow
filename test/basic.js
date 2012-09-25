@@ -147,7 +147,7 @@ describe('invoke', function () {
     });
   });
 
-  it('should cause an error if there are more than one listeners', function (done) {
+  it('should cause an error if there is more than one listener', function (done) {
     emitter.on('timestamp', function () {
       return new Date().getTime();
     });
@@ -203,6 +203,21 @@ describe('invoke', function () {
       assert.ifError(err);
       assert(value, 1);
       done();
+    });
+  });
+
+  it('should be able to be called multiple times', function (done) {
+    emitter.on('echo', function (msg) {
+      return msg;
+    });
+    emitter.invoke('echo', 'hello', function (err, value) {
+      assert.ifError(err);
+      assert(value, 'hello');
+      emitter.invoke('echo', 'world', function (err, value) {
+        assert.ifError(err);
+        assert(value, 'world');
+        done();
+      });
     });
   });
 });
