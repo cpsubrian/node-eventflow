@@ -40,21 +40,8 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
   };
 };
 
-function countArgs (fn) {
-  var regex = /function(?:\s+\w+\s*|\s*)\(([^\)]*)\)/i;
-  var args = fn.toString().match(regex)[1].trim();
-  if (args.length) {
-    return args.split(',').length;
-  }
-  else {
-    return 0;
-  }
-}
-eventflow.countArgs = countArgs;
-
 function asyncApply (thisArg, fn, args, done) {
-  var count = countArgs(fn);
-  if (count <= args.length) {
+  if (fn.length <= args.length) {
     done(null, fn.apply(thisArg, args));
   }
   else {

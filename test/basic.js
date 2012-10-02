@@ -4,25 +4,6 @@ var eventflow = require('../'),
 
 eventflow(EventEmitter);
 
-describe('countArgs()', function () {
-
-  it('should return 0 for a function with no arguments', function () {
-    function zero () {}
-    assert.equal(eventflow.countArgs(zero), 0);
-  });
-
-  it('should return 1 for a function with one argument', function () {
-    function one (foo) {}
-    assert.equal(eventflow.countArgs(one), 1);
-  });
-
-  it('should return 5 for a function with five arguments', function () {
-    function five (foo, bar, baz,boo, far) {}
-    assert.equal(eventflow.countArgs(five), 5);
-  });
-
-});
-
 describe('series', function() {
   var emitter, result;
 
