@@ -100,9 +100,9 @@ describe('series', function() {
       result.push('pepsi');
     });
     emitter.series('drink', function (err) {
-      assert(result[0], 'coke');
-      assert(result.length, 1);
-      assert(err, 'oh no!');
+      assert.equal(result[0], 'coke');
+      assert.equal(result.length, 1);
+      assert.equal(err, 'oh no!');
       done();
     });
   });
@@ -141,10 +141,10 @@ describe('parallel', function () {
     });
     emitter.parallel('numbers', function (err, results) {
       assert.ifError(err);
-      assert(results[1], 2);
+      assert.equal(results[1], 2);
       emitter.parallel('numbers', function (err, results) {
         assert.ifError(err);
-        assert(results[0], 1);
+        assert.equal(results[0], 1);
         done();
       });
     });
@@ -185,7 +185,7 @@ describe('invoke', function () {
     });
     emitter.invoke('timestamp', function (err, value) {
       assert.ifError(err);
-      assert(value, timestamp);
+      assert.equal(value, timestamp);
       done();
     });
   });
@@ -197,7 +197,7 @@ describe('invoke', function () {
     });
     emitter.invoke('timestamp', function (err, value) {
       assert.ifError(err);
-      assert(value, timestamp);
+      assert.equal(value, timestamp);
       done();
     });
   });
@@ -208,7 +208,7 @@ describe('invoke', function () {
     });
     emitter.invoke('add', 1, 2, function (err, value) {
       assert.ifError(err);
-      assert(value, 3);
+      assert.equal(value, 3);
       done();
     });
   });
@@ -219,7 +219,7 @@ describe('invoke', function () {
     });
     emitter.invoke('subtract', 3, 2, function (err, value) {
       assert.ifError(err);
-      assert(value, 1);
+      assert.equal(value, 1);
       done();
     });
   });
@@ -230,10 +230,10 @@ describe('invoke', function () {
     });
     emitter.invoke('echo', 'hello', function (err, value) {
       assert.ifError(err);
-      assert(value, 'hello');
+      assert.equal(value, 'hello');
       emitter.invoke('echo', 'world', function (err, value) {
         assert.ifError(err);
-        assert(value, 'world');
+        assert.equal(value, 'world');
         done();
       });
     });
