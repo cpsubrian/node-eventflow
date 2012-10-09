@@ -53,6 +53,7 @@ Now use one of the flow control methods to invoke your handlers and respond
 when they are done.
 
 **series**
+
 ```js
 emitter.series('foo', function() {
   // The listeners ran in the order they were added and are all finished.
@@ -60,6 +61,7 @@ emitter.series('foo', function() {
 ```
 
 **parallel**
+
 ```js
 emitter.parallel('foo', function() {
   // The listeners ran in parallel and are all finished.
@@ -128,6 +130,7 @@ Think of 'invoke' as in-app RPC via an EventEmitter. Instead of passing
 functions around your app in `options` objects, you can invoke them instead.
 
 **Example**
+
 ```js
 emitter.on('add', function(a, b) {
   return a + b;
