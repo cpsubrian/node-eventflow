@@ -1,9 +1,13 @@
-var async = require('async');
+var async = require('async'),
+    EventEmitter = require('events').EventEmitter;
 
 var eventflow = module.exports = function eventflow (eventEmitter) {
   // We were passed a 'class'.
-  if (eventEmitter.prototype && eventEmitter.prototype.on) {
+  if (eventEmitter && eventEmitter.prototype && eventEmitter.prototype.on) {
     eventEmitter = eventEmitter.prototype;
+  }
+  else if (typeof eventEmitter === 'undefined') {
+    eventEmitter = new EventEmitter;
   }
 
   // Attach async methods.
@@ -38,6 +42,8 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
       asyncApply(emitter, listeners[0], args, callback);
     }
   };
+
+  return eventEmitter;
 };
 
 function asyncApply (thisArg, fn, args, done) {
