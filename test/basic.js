@@ -219,5 +219,12 @@ describe('invoke', function () {
       });
     });
   });
+
+  it('should support synchronous invoke', function () {
+    emitter.on('sync', function () {
+      return 'isSync';
+    });
+    assert.equal(emitter.invoke('sync'), 'isSync');
+  });
 });
 

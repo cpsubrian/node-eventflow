@@ -29,17 +29,31 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
     var emitter = this,
         args = Array.prototype.slice.call(arguments),
         name = args.shift(),
-        callback = args.pop(),
+        callback = typeof args[args.length -1] === 'function' ? args.pop() : null,
         listeners = emitter.listeners(name);
 
+    function handleError (err) {
+      if (callback) {
+        callback(err);
+      }
+      else {
+        throw err;
+      }
+    }
+
     if (!listeners.length) {
-      callback(new Error('Tried to invoke `' + name + '` but there were no listeners'));
+      handleError(new Error('Tried to invoke `' + name + '` but there were no listeners'));
     }
     else if (listeners.length > 1) {
-      callback(new Error('Tried to invoke `' + name + '` but there were ' + listeners.length + ' listners'));
+      handleError(new Error('Tried to invoke `' + name + '` but there were ' + listeners.length + ' listners'));
     }
     else {
-      asyncApply(emitter, listeners[0], args, callback);
+      if (callback) {
+        asyncApply(emitter, listeners[0], args, callback);
+      }
+      else {
+        return listeners[0].apply(emitter, args);
+      }
     }
   };
 
