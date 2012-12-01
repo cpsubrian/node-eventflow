@@ -66,6 +66,19 @@ emitter.parallel('foo', function() {
 });
 ```
 
+**waterfall**
+```js
+emitter.on('foo', function (n) {
+  return n + 1;
+});
+emitter.on('foo', function (n) {
+  return n * 3;
+});
+emitter.waterfall('foo', 2, function(err, n) {
+  // n = 9
+});
+```
+
 Advanced
 --------
 
