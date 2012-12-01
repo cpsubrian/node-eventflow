@@ -150,6 +150,26 @@ emitter.invoke('subtract', 3, 2, function(err, value) {
 });
 ```
 
+Waterfall
+---------
+
+The waterfall method allows listeners to modify a variable in a series. The
+first listener receives an initial value, and each subsequent listener modifies
+the return of the last listener:
+
+```js
+emitter.on('foo', function(n) {
+  // sync task
+  return n + 1;
+});
+emitter.on('foo', function(n, callback) {
+  // async task
+  cb(null, n * 3);
+});
+emitter.waterfall('foo', 2, function(err, n) {
+  // n = 9
+});
+```
 
 - - -
 

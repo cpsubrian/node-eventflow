@@ -11,13 +11,13 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
   }
 
   // Attach async methods.
-  ['series', 'parallel'].forEach(function(method) {
+  ['series', 'parallel', 'waterfall'].forEach(function(method) {
     eventEmitter[method] = function () {
       var emitter = this,
           args = Array.prototype.slice.call(arguments),
           name = args.shift(),
           callback = args.pop(),
-          tasks = mapHandlers(emitter, name, args);
+          tasks = mapHandlers(method, emitter, name, args);
 
       async[method](tasks, callback);
     };
@@ -61,16 +61,21 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
 };
 
 function asyncApply (thisArg, fn, args, done) {
+  if (!Array.isArray(args)) args = [args];
   if (fn.length <= args.length) {
     done(null, fn.apply(thisArg, args));
   }
   else {
-    fn.apply(thisArg, args.slice(0).concat([done]));
+    fn.apply(thisArg, args.slice().concat(done));
   }
 }
 
-function mapHandlers (emitter, name, args) {
-  return emitter.listeners(name).map(function (listener) {
+function mapHandlers (method, emitter, name, args) {
+  return emitter.listeners(name).map(function (listener, idx) {
+    if (method === 'waterfall' && idx > 0) {
+      // For waterfall, args only need to be bound to the first task.
+      return asyncApply.bind(emitter, emitter, listener);
+    }
     return asyncApply.bind(emitter, emitter, listener, args);
   });
 }

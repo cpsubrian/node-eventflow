@@ -228,3 +228,46 @@ describe('invoke', function () {
   });
 });
 
+describe('waterfall', function() {
+  var emitter;
+
+  beforeEach(function() {
+    emitter = new EventEmitter();
+  });
+
+  it('should pass a value between handlers', function (done) {
+    emitter.on('foo', function (n) {
+      return n + 1;
+    });
+
+    emitter.on('foo', function (n, cb) {
+      cb(null, n * 5);
+    });
+
+    emitter.on('foo', function (n) {
+      return n - 3;
+    });
+
+    emitter.waterfall('foo', 0, function (err, n) {
+      assert.equal(n, 2);
+      done();
+    });
+  });
+
+  it('should support optional use of `error`', function (done) {
+    emitter.on('drink', function (n) {
+      return n + 1;
+    });
+    emitter.on('drink', function (n, cb) {
+      cb('oh no!');
+    });
+    emitter.on('drink', function (n) {
+      return n - 3;
+    });
+    emitter.waterfall('drink', 0, function (err, n) {
+      assert.equal(n, undefined);
+      assert.equal(err, 'oh no!');
+      done();
+    });
+  });
+});
