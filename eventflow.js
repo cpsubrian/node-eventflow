@@ -7,7 +7,7 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
     eventEmitter = eventEmitter.prototype;
   }
   else if (typeof eventEmitter === 'undefined') {
-    eventEmitter = new EventEmitter;
+    eventEmitter = new EventEmitter();
   }
 
   // Attach async methods.
@@ -63,7 +63,13 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
 function asyncApply (thisArg, fn, args, done) {
   if (!Array.isArray(args)) args = [args];
   if (fn.length <= args.length) {
-    done(null, fn.apply(thisArg, args));
+    var result = fn.apply(thisArg, args);
+    if (result instanceof Error) {
+      done(result);
+    }
+    else {
+      done(null, result);
+    }
   }
   else {
     fn.apply(thisArg, args.slice().concat(done));

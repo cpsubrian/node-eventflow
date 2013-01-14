@@ -87,6 +87,16 @@ describe('series', function() {
       done();
     });
   });
+
+  it('should support sync listeners returning errors', function (done) {
+    emitter.on('eat', function () {
+      return new Error('I am full');
+    });
+    emitter.series('eat', function (err, results) {
+      assert.equal(err.message, 'I am full');
+      done();
+    });
+  });
 });
 
 
