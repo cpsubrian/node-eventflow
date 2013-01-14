@@ -7,6 +7,7 @@ Flow control for your event emitters.
 
 About
 -----
+
 EventEmitters are an important part of well-designed node.js applications.
 `on()` and `emit()` can get you pretty far, but wouldn't it be great if you
 could run your event handlers asynchronously, with a continuation callback?
@@ -16,15 +17,16 @@ could run your event handlers asynchronously, with a continuation callback?
 
 Usage
 -----
-Attach eventflow to your event emitter:
+
+### Creating an EventFlow emitter
+
+Create a new emitter.
 
 ```js
-var EventEmitter = require('events').EventEmitter,
-    require('eventflow')(EventEmitter),
-    emitter = new EventEmitter();
+var emitter = require('eventflow')();
 ```
 
-Or, if you prefer not to extend the prototype:
+Or, extend an existing emitter with EventFlow functionality.
 
 ```js
 var EventEmitter = require('events').EventEmitter,
@@ -32,6 +34,26 @@ var EventEmitter = require('events').EventEmitter,
 
 require('eventflow')(emitter);
 ```
+
+Or, extend an EventEmitter class with EventFlow functionality.
+
+```js
+var EventEmitter = require('events').EventEmitter,
+    require('eventflow')(EventEmitter),
+    emitter = new EventEmitter();
+```
+
+Or, convert any object into an EventFlow emitter.
+
+```js
+var emitter = {
+  type: 'car',
+  name: 'Honda'
+};
+require('eventflow')(emitter);
+```
+
+### Listen
 
 Listen for some events, with or without continuation callbacks. EventFlow does
 some simple introspection of your listeners to see if they accept a callback
@@ -49,6 +71,8 @@ emitter.on('foo', function(callback) {
 });
 ```
 
+### Invoke listeners
+
 Now use one of the flow control methods to invoke your handlers and respond
 when they are done.
 
@@ -65,6 +89,35 @@ emitter.series('foo', function() {
 ```js
 emitter.parallel('foo', function() {
   // The listeners ran in parallel and are all finished.
+});
+```
+
+Errors
+------
+
+In synchronous listeners, you can return `Error` objects.
+
+```js
+emitter.on('foo', function () {
+  return new Error('Something broke');
+});
+```
+
+In async listeners, you should pass an `Error` as the first argument to the
+callback.
+
+```js
+emitter.on('foo', function (cb) {
+  cb(new Error('Something broke'));
+});
+```
+
+No matter whether your listeners are sync or async, Errors will always be
+passed back as the first argument in the callback of the invocation.
+
+```js
+emitter.series('foo', function (err) {
+  // `err` is the first error encountered.
 });
 ```
 
@@ -115,9 +168,31 @@ emitter.series('fruit', function(err, results) {
 });
 ```
 
+Waterfall
+---------
+
+The waterfall method allows listeners to modify a variable in a series. The
+first listener receives an initial value, and each subsequent listener modifies
+the return of the last listener:
+
+```js
+emitter.on('foo', function(n) {
+  // sync task
+  return n + 1;
+});
+emitter.on('foo', function(n, callback) {
+  // async task
+  cb(null, n * 3);
+});
+emitter.waterfall('foo', 2, function(err, n) {
+  // n = 9
+});
+```
+
 Invoke
 ------
-EventFlow also exposes the method `emitter.invoke(event, [args...], callback)`.
+
+EventFlow also attaches the method `emitter.invoke(event, [args...], callback)`.
 Invoke executes using the following rules:
 
 1. There must be EXACTLY one listener for the event. Otherwise the callback
@@ -150,24 +225,84 @@ emitter.invoke('subtract', 3, 2, function(err, value) {
 });
 ```
 
-Waterfall
----------
+Example Use Case: Model API
+---------------------------
 
-The waterfall method allows listeners to modify a variable in a series. The
-first listener receives an initial value, and each subsequent listener modifies
-the return of the last listener:
+Lets say you are designing a simple model api around redis (or whatever db you
+use). It has the following API:
 
 ```js
-emitter.on('foo', function(n) {
-  // sync task
-  return n + 1;
+function Model () {
+  // Constructor stuff.
+}
+Model.prototype = {
+  load: function (id, cb) {
+    // Load a model from the db.
+  },
+  save: function (cb) {
+    // Save the model.
+  }
+}
+module.exports = Model;
+```
+
+You know your app will need to support validation, but you dont want
+this Model module to include any of the app-specific validation logic. Using
+EventFlow, you could just use a 'validate' event to abstract it away.
+
+```js
+var eventflow = require('eventflow');
+
+function Model () {
+  // Constructor stuff.
+}
+
+eventflow(Model);
+
+Model.prototype = {
+  load: function (id, cb) {
+    // Load a model from the db.
+  },
+  save: function (cb) {
+    Model.parallel('validate', this, function (err) {
+      if (err) {
+        // There was an error validating the model or it was invalid.
+        return cb(err);
+      }
+      else {
+        // Save the model and eventually call `cb(null)`.
+      }
+    });
+  }
+}
+
+module.exports = Model;
+```
+
+Now your app could do something like the following:
+
+```js
+var Model = require('./path/to/model');
+
+// Simple validation.
+Model.on('validate', function (model) {
+  if (model.title.length > 50) {
+    return new Error('Titles should be 50 chars or less.');
+  }
 });
-emitter.on('foo', function(n, callback) {
-  // async task
-  cb(null, n * 3);
+
+// Async validation that hits a db or something.
+Model.on('validate', function (model, cb) {
+  Model.load(model.id, function (err, model) {
+    if (err) return cb(err);
+    if (model) return cb(new Error('A model already exists for this id.'));
+    cb(null);
+  });
 });
-emitter.waterfall('foo', 2, function(err, n) {
-  // n = 9
+
+var thing = new Model();
+thing.save(function (err) {
+  // Validation errors would appear here.
 });
 ```
 

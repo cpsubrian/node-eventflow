@@ -1,14 +1,15 @@
-var eventflow = require('../'),
-    EventEmitter = require('events').EventEmitter,
-    assert = require('assert');
+var eventflow = require('../')
+  , assert = require('assert')
+  , emitter;
 
-eventflow(EventEmitter);
+beforeEach(function() {
+  emitter = eventflow();
+});
 
 describe('series', function() {
-  var emitter, result;
+  var result;
 
   beforeEach(function() {
-    emitter = new EventEmitter();
     result = [];
   });
 
@@ -101,10 +102,9 @@ describe('series', function() {
 
 
 describe('parallel', function () {
-  var emitter, result;
+  var result;
 
   beforeEach(function () {
-    emitter = new EventEmitter();
     result = {};
   });
 
@@ -143,12 +143,6 @@ describe('parallel', function () {
 });
 
 describe('invoke', function () {
-  var emitter;
-
-  beforeEach(function () {
-    emitter = new EventEmitter();
-  });
-
   it('should cause an error if there are no listeners', function (done) {
     emitter.invoke('timestamp', function (err, timestamp) {
       assert(err);
@@ -239,12 +233,6 @@ describe('invoke', function () {
 });
 
 describe('waterfall', function() {
-  var emitter;
-
-  beforeEach(function() {
-    emitter = new EventEmitter();
-  });
-
   it('should pass a value between handlers', function (done) {
     emitter.on('foo', function (n) {
       return n + 1;

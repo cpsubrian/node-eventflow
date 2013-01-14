@@ -2,12 +2,26 @@ var async = require('async'),
     EventEmitter = require('events').EventEmitter;
 
 var eventflow = module.exports = function eventflow (eventEmitter) {
-  // We were passed a 'class'.
-  if (eventEmitter && eventEmitter.prototype && eventEmitter.prototype.on) {
+  if (typeof eventEmitter === 'undefined') {
+    eventEmitter = new EventEmitter();
+  }
+  else if (eventEmitter.prototype && eventEmitter.prototype.on) {
     eventEmitter = eventEmitter.prototype;
   }
-  else if (typeof eventEmitter === 'undefined') {
-    eventEmitter = new EventEmitter();
+  else if (!eventEmitter.on) {
+    var tempEmitter = new EventEmitter();
+    Object.keys(tempEmitter).forEach(function (prop) {
+      if (typeof eventEmitter[prop] !== 'undefined') {
+        throw new Error('Conflict converting obj to eventflow emitter on property`' + prop + '`');
+      }
+      eventEmitter[prop] = tempEmitter[prop];
+    });
+    Object.keys(EventEmitter.prototype).forEach(function (method) {
+      if (typeof eventEmitter[method] !== 'undefined') {
+        throw new Error('Conflict converting obj to eventflow emitter on method`' + method + '`');
+      }
+      eventEmitter[method] = tempEmitter[method];
+    });
   }
 
   // Attach async methods.
