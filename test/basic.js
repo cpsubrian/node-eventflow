@@ -27,11 +27,28 @@ describe('series', function() {
       result.push('c');
     });
 
+    emitter.once('foo', function (cb) {
+      result.push('d');
+      cb();
+    });
+
+    assert.equal(emitter.listeners('foo').length, 4);
+
     emitter.series('foo', function () {
+      assert.equal(emitter.listeners('foo').length, 3);
       assert.equal(result[0], 'a');
       assert.equal(result[1], 'b');
       assert.equal(result[2], 'c');
-      done();
+      assert.equal(result[3], 'd');
+      result = [];
+      emitter.series('foo', function () {
+        assert.equal(emitter.listeners('foo').length, 3);
+        assert.equal(result[0], 'a');
+        assert.equal(result[1], 'b');
+        assert.equal(result[2], 'c');
+        assert.equal(result.length, 3);
+        done();
+      });
     });
   });
 
