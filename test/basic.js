@@ -265,7 +265,7 @@ describe('invoke', function () {
     });
   });
 
-  it('should work exactly once when there is exactly one synchronous .once listener', function (done) {
+  it('should respect exactly one synchronous .once listener', function (done) {
     var timestamp = new Date().getTime();
     emitter.once('timestamp', function () {
       return timestamp;
@@ -280,7 +280,7 @@ describe('invoke', function () {
     });
   });
 
-  it('should work when there is exactly one asynchronous listener', function (done) {
+  it('should respect exactly one asynchronous listener', function (done) {
     var timestamp = new Date().getTime();
     emitter.on('timestamp', function (callback) {
       callback(null, timestamp);
@@ -292,7 +292,7 @@ describe('invoke', function () {
     });
   });
 
-  it('should work exactly once when there is exactly one asynchronous .once listener', function (done) {
+  it('should respect exactly one asynchronous .once listener', function (done) {
     var timestamp = new Date().getTime();
     emitter.once('timestamp', function (callback) {
       callback(null, timestamp);
