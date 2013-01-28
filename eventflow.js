@@ -63,10 +63,10 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
     }
     else {
       if (callback) {
-        asyncApply(emitter, listeners[0], args, callback);
+        asyncApply(emitter, handleOnce(emitter, name, listeners[0]), args, callback);
       }
       else {
-        return listeners[0].apply(emitter, args);
+        return handleOnce(emitter, name, listeners[0]).apply(emitter, args);
       }
     }
   };
