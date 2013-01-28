@@ -75,6 +75,9 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
 };
 
 function asyncApply (thisArg, fn, args, done) {
+  if ('function' === typeof fn.removeWrapper) {
+    fn.removeWrapper(); // remove the wrapper, as it would have removed itself
+  }
   if (!Array.isArray(args)) args = [args];
   if (fn.length <= args.length) {
     var result = fn.apply(thisArg, args);
@@ -111,7 +114,7 @@ function handleOnce (emitter, name, listener) {
   // If there is no such property, it's a normal .on listener -- proceed as normal
   if (typeof listener.listener !== 'function') return listener;
   var origlistener = listener.listener;
-  emitter.removeListener(name, listener); // remove the wrapper, as it would have removed itself
+  origlistener.removeWrapper = emitter.removeListener.bind(emitter, name, listener); // save this removal function for execution time
   return origlistener; // apply to the original listener; note that since the .once wrapper
                        // was removed, it won't get invoked again
 }
