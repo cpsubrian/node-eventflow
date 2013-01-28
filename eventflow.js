@@ -63,10 +63,10 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
     }
     else {
       if (callback) {
-        asyncApply(emitter, listeners[0], args, callback);
+        asyncApply(emitter, handleOnce(emitter, name, listeners[0]), args, callback);
       }
       else {
-        return listeners[0].apply(emitter, args);
+        return handleOnce(emitter, name, listeners[0]).apply(emitter, args);
       }
     }
   };
@@ -75,6 +75,9 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
 };
 
 function asyncApply (thisArg, fn, args, done) {
+  if ('function' === typeof fn.removeWrapper) {
+    fn.removeWrapper(); // remove the wrapper, as it would have removed itself
+  }
   if (!Array.isArray(args)) args = [args];
   if (fn.length <= args.length) {
     var result = fn.apply(thisArg, args);
@@ -94,8 +97,24 @@ function mapHandlers (method, emitter, name, args) {
   return emitter.listeners(name).map(function (listener, idx) {
     if (method === 'waterfall' && idx > 0) {
       // For waterfall, args only need to be bound to the first task.
-      return asyncApply.bind(emitter, emitter, listener);
+      return asyncApply.bind(emitter, emitter, handleOnce(emitter, name, listener));
     }
-    return asyncApply.bind(emitter, emitter, listener, args);
+    return asyncApply.bind(emitter, emitter, handleOnce(emitter, name, listener), args);
   });
+}
+
+/**
+ * Allow (and honor) emitter.once('foo', ...)
+ * See:
+ * EventEmitter.prototype.once
+ * https://github.com/joyent/node/blob/master/lib/events.js#L184-L199
+ */
+function handleOnce (emitter, name, listener) {
+  // A .once listener is actually a wrapper that has the original listener attached
+  // If there is no such property, it's a normal .on listener -- proceed as normal
+  if (typeof listener.listener !== 'function') return listener;
+  var origlistener = listener.listener;
+  origlistener.removeWrapper = emitter.removeListener.bind(emitter, name, listener); // save this removal function for execution time
+  return origlistener; // apply to the original listener; note that since the .once wrapper
+                       // was removed, it won't get invoked again
 }

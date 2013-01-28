@@ -27,11 +27,33 @@ describe('series', function() {
       result.push('c');
     });
 
+    emitter.once('foo', function () {
+      result.push('d');
+    });
+
+    emitter.once('foo', function (cb) {
+      result.push('e');
+      cb();
+    });
+
+    assert.equal(emitter.listeners('foo').length, 5);
+
     emitter.series('foo', function () {
+      assert.equal(emitter.listeners('foo').length, 3);
       assert.equal(result[0], 'a');
       assert.equal(result[1], 'b');
       assert.equal(result[2], 'c');
-      done();
+      assert.equal(result[3], 'd');
+      assert.equal(result[4], 'e');
+      result = [];
+      emitter.series('foo', function () {
+        assert.equal(emitter.listeners('foo').length, 3);
+        assert.equal(result[0], 'a');
+        assert.equal(result[1], 'b');
+        assert.equal(result[2], 'c');
+        assert.equal(result.length, 3);
+        done();
+      });
     });
   });
 
@@ -47,12 +69,39 @@ describe('series', function() {
       cb();
     });
 
+    emitter.once('bar', function (a, b) {
+      result.push(a);
+      result.push(b);
+    });
+
+    emitter.once('bar', function (a, b, cb) {
+      result.push(a);
+      result.push(b);
+      cb();
+    });
+
+    assert.equal(emitter.listeners('bar').length, 4);
+
     emitter.series('bar', 'foo', 'baz', function () {
+      assert.equal(emitter.listeners('bar').length, 2);
       assert.equal(result[0], 'foo');
       assert.equal(result[1], 'baz');
       assert.equal(result[2], 'foo');
       assert.equal(result[3], 'baz');
-      done();
+      assert.equal(result[4], 'foo');
+      assert.equal(result[5], 'baz');
+      assert.equal(result[6], 'foo');
+      assert.equal(result[7], 'baz');
+      result = [];
+      emitter.series('bar', 'foo', 'baz', function () {
+        assert.equal(emitter.listeners('bar').length, 2);
+        assert.equal(result[0], 'foo');
+        assert.equal(result[1], 'baz');
+        assert.equal(result[2], 'foo');
+        assert.equal(result[3], 'baz');
+        assert.equal(result.length, 4);
+        done();
+      });
     });
   });
 
@@ -63,10 +112,18 @@ describe('series', function() {
     emitter.on('fruit', function () {
       return 'orange';
     });
+    emitter.once('fruit', function (cb) {
+      cb(null, 'grape');
+    });
+    emitter.once('fruit', function () {
+      return 'lime';
+    });
     emitter.series('fruit', function (err, results) {
       assert.ifError(err);
       assert.equal(results[0], 'apple');
       assert.equal(results[1], 'orange');
+      assert.equal(results[2], 'grape');
+      assert.equal(results[3], 'lime');
       done();
     });
   });
@@ -74,6 +131,9 @@ describe('series', function() {
   it('should support optional use of `error`', function (done) {
     emitter.on('drink', function () {
       result.push('coke');
+    });
+    emitter.once('drink', function (cb) {
+      cb('oh no! first');
     });
     emitter.on('drink', function (cb) {
       cb('oh no!');
@@ -84,18 +144,30 @@ describe('series', function() {
     emitter.series('drink', function (err) {
       assert.equal(result[0], 'coke');
       assert.equal(result.length, 1);
-      assert.equal(err, 'oh no!');
-      done();
+      assert.equal(err, 'oh no! first');
+      result = [];
+      emitter.series('drink', function (err) {
+        assert.equal(result[0], 'coke');
+        assert.equal(result.length, 1);
+        assert.equal(err, 'oh no!');
+        done();
+      });
     });
   });
 
   it('should support sync listeners returning errors', function (done) {
+    emitter.once('eat', function () {
+      return new Error('I am not really hungry...');
+    });
     emitter.on('eat', function () {
       return new Error('I am full');
     });
     emitter.series('eat', function (err, results) {
-      assert.equal(err.message, 'I am full');
-      done();
+      assert.equal(err.message, 'I am not really hungry...');
+      emitter.series('eat', function (err, results) {
+        assert.equal(err.message, 'I am full');
+        done();
+      });
     });
   });
 });
@@ -116,9 +188,18 @@ describe('parallel', function () {
       result.hard = 'Jolly Rancher';
       cb();
     });
+    emitter.on('candy', function () {
+      result.boring = 'Hershey Bar';
+    });
+    emitter.on('candy', function (cb) {
+      result.perfect = 'Peanut Butter Cup';
+      cb();
+    });
     emitter.parallel('candy', function () {
       assert.equal(result.sour, 'Sour Patch');
       assert.equal(result.hard, 'Jolly Rancher');
+      assert.equal(result.boring, 'Hershey Bar');
+      assert.equal(result.perfect, 'Peanut Butter Cup');
       done();
     });
   });
@@ -130,12 +211,21 @@ describe('parallel', function () {
     emitter.on('numbers', function() {
       return 2;
     });
+    emitter.once('numbers', function() {
+      return 3;
+    });
+    emitter.once('numbers', function() {
+      return 4;
+    });
     emitter.parallel('numbers', function (err, results) {
       assert.ifError(err);
       assert.equal(results[1], 2);
+      assert.equal(results[3], 4);
+      assert.equal(results.length, 4);
       emitter.parallel('numbers', function (err, results) {
         assert.ifError(err);
         assert.equal(results[0], 1);
+        assert.equal(results.length, 2);
         done();
       });
     });
@@ -163,7 +253,7 @@ describe('invoke', function () {
     });
   });
 
-  it('should work when there is exactly one synchronous listner', function (done) {
+  it('should work when there is exactly one synchronous listener', function (done) {
     var timestamp = new Date().getTime();
     emitter.on('timestamp', function () {
       return timestamp;
@@ -172,6 +262,21 @@ describe('invoke', function () {
       assert.ifError(err);
       assert.equal(value, timestamp);
       done();
+    });
+  });
+
+  it('should work exactly once when there is exactly one synchronous .once listener', function (done) {
+    var timestamp = new Date().getTime();
+    emitter.once('timestamp', function () {
+      return timestamp;
+    });
+    emitter.invoke('timestamp', function (err, value) {
+      assert.ifError(err);
+      assert.equal(value, timestamp);
+      emitter.invoke('timestamp', function (err, value) {
+        assert(err);
+        done();
+      });
     });
   });
 
@@ -184,6 +289,21 @@ describe('invoke', function () {
       assert.ifError(err);
       assert.equal(value, timestamp);
       done();
+    });
+  });
+
+  it('should work exactly once when there is exactly one asynchronous .once listener', function (done) {
+    var timestamp = new Date().getTime();
+    emitter.once('timestamp', function (callback) {
+      callback(null, timestamp);
+    });
+    emitter.invoke('timestamp', function (err, value) {
+      assert.ifError(err);
+      assert.equal(value, timestamp);
+      emitter.invoke('timestamp', function (err, value) {
+        assert(err);
+        done();
+      });
     });
   });
 
@@ -203,6 +323,29 @@ describe('invoke', function () {
       callback(null, a - b);
     });
     emitter.invoke('subtract', 3, 2, function (err, value) {
+      assert.ifError(err);
+      assert.equal(value, 1);
+      done();
+    });
+  });
+
+  it('should work with arguments using .once listener', function (done) {
+    emitter.once('multiply', function (a, b) {
+      return a * b;
+    });
+    emitter.invoke('multiply', 2, 3, function (err, value) {
+      assert.ifError(err);
+      assert.equal(value, 6);
+      done();
+    });
+  });
+
+  it('should work with arguments, asynchronously, using .once listener', function (done) {
+    emitter.once('modulus', function (a, b, callback) {
+      // You thought I was going to divide, didn't you?
+      callback(null, a % b);
+    });
+    emitter.invoke('modulus', 3, 2, function (err, value) {
       assert.ifError(err);
       assert.equal(value, 1);
       done();
@@ -229,6 +372,10 @@ describe('invoke', function () {
       return 'isSync';
     });
     assert.equal(emitter.invoke('sync'), 'isSync');
+    emitter.once('resync', function () {
+      return 'isSync';
+    });
+    assert.equal(emitter.invoke('resync'), 'isSync');
   });
 });
 
@@ -239,6 +386,25 @@ describe('waterfall', function() {
     });
 
     emitter.on('foo', function (n, cb) {
+      cb(null, n * 5);
+    });
+
+    emitter.on('foo', function (n) {
+      return n - 3;
+    });
+
+    emitter.waterfall('foo', 0, function (err, n) {
+      assert.equal(n, 2);
+      done();
+    });
+  });
+
+  it('should work with one or more .once handlers', function (done) {
+    emitter.once('foo', function (n) {
+      return n + 1;
+    });
+
+    emitter.once('foo', function (n, cb) {
       cb(null, n * 5);
     });
 
