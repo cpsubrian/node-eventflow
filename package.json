@@ -1,6 +1,6 @@
 {
   "name": "eventflow",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Flow control for your event emitters",
   "main": "eventflow.js",
   "scripts": {
