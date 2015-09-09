@@ -10,12 +10,6 @@ var eventflow = module.exports = function eventflow (eventEmitter) {
   }
   else if (!eventEmitter.on) {
     var tempEmitter = new EventEmitter();
-    Object.keys(tempEmitter).forEach(function (prop) {
-      if (typeof eventEmitter[prop] !== 'undefined') {
-        throw new Error('Conflict converting obj to eventflow emitter on property`' + prop + '`');
-      }
-      eventEmitter[prop] = tempEmitter[prop];
-    });
     Object.keys(EventEmitter.prototype).forEach(function (method) {
       if (typeof eventEmitter[method] !== 'undefined') {
         throw new Error('Conflict converting obj to eventflow emitter on method`' + method + '`');
